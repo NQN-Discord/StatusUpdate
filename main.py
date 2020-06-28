@@ -6,6 +6,7 @@ import random
 from aiopg import connect
 from sys import stderr
 from logging import basicConfig, INFO, getLogger
+import sentry_sdk
 
 
 basicConfig(stream=stderr, level=INFO)
@@ -20,6 +21,8 @@ async def get_guild_member_count(conn) -> Tuple[int, int]:
 
 
 async def main(config):
+    if config.get("sentry"):
+        sentry_sdk.init(config["sentry"])
     gateway_url = config["gateway_url"]
     async with connect(config["postgres_uri"]) as conn:
         async with aiohttp.ClientSession() as session:
