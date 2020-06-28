@@ -28,8 +28,11 @@ async def main(config):
                 counts = [f"{guilds} servers", f"{members} members"]
                 random.shuffle(counts)
                 message = f"{counts[0]} and {counts[1]}"
-                log.info(f"Sending {message!r}")
-                await session.put(f"{gateway_url}/status", json={"status": message})
+                log.debug(f"Sending {message!r}")
+                try:
+                    await session.put(f"{gateway_url}/status", json={"status": message})
+                except aiohttp.ClientConnectorError:
+                    pass
 
                 await asyncio.sleep(60)
 
