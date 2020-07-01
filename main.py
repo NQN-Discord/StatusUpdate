@@ -9,7 +9,7 @@ from logging import basicConfig, INFO, getLogger
 import sentry_sdk
 
 
-basicConfig(stream=stderr, level=INFO)
+basicConfig(stream=stderr, level=INFO, format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 log = getLogger(__name__)
 
 
@@ -23,6 +23,7 @@ async def get_guild_member_count(conn) -> Tuple[int, int]:
 async def main(config):
     if config.get("sentry"):
         sentry_sdk.init(config["sentry"])
+    log.info("Starting up")
     gateway_url = config["gateway_url"]
     async with connect(config["postgres_uri"]) as conn:
         async with aiohttp.ClientSession() as session:
