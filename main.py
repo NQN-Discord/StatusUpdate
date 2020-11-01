@@ -90,6 +90,15 @@ async def post_bot_sites(guild_count: int, user_count: int):
                 },
                 headers={"Authorization": f"Bot {dblc}", "Content-Type": "application/json"}
             )
+        extreme = config["sites"].get("extreme")
+        if extreme:
+            await client.post(
+                url=f"https://api.discordextremelist.xyz/v2/bot/{bot_id}/stats",
+                json={
+                    "guildCount": guild_count,
+                },
+                headers={"Authorization": extreme, "Content-Type": "application/json"}
+            )
 
 
 async def main(config):
