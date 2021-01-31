@@ -3,9 +3,9 @@ from typing import Tuple
 import asyncio
 import aiohttp
 import random
-from aiopg import connect
+import aioredis
 from sys import stderr
-from logging import basicConfig, INFO, DEBUG, getLogger
+from logging import basicConfig, INFO, getLogger
 import sentry_sdk
 
 from rabbit_sender import StatusUpdateRabbit
@@ -15,11 +15,12 @@ basicConfig(stream=stderr, level=INFO, format='%(asctime)s.%(msecs)03d %(levelna
 log = getLogger(__name__)
 
 
-async def get_guild_member_count(conn) -> Tuple[int, int]:
-    async with conn.cursor() as cur:
-        await cur.execute("SELECT COUNT(DISTINCT guild_id) as guilds, COUNT (DISTINCT user_id) as members FROM members")
-        guilds_members, = await cur.fetchall()
-        return guilds_members
+async def get_guild_member_count(redis) -> Tuple[int, int]:
+    tr = redis.pipeline()
+    guilds = tr.scard("guilds")
+    members = tr.pfcount("member-count")
+    await tr.execute()
+    return await guilds, await members
 
 
 async def post_bot_sites(guild_count: int, user_count: int):
@@ -108,21 +109,21 @@ async def main(config):
 
     rabbit = StatusUpdateRabbit(config["rabbit_uri"])
     await rabbit.connect()
+    redis = await aioredis.create_redis_pool(config["nonpersistent_redis_uri"], encoding="utf-8")
 
-    async with connect(config["postgres_uri"]) as conn:
-        while True:
-            guilds, members = await get_guild_member_count(conn)
-            counts = [f"{guilds} servers", f"{members} members"]
-            random.shuffle(counts)
-            message = f"{counts[0]} and {counts[1]}"
-            log.debug(f"Sending {message!r}")
-            try:
-                await rabbit.send_status(message)
-                await post_bot_sites(guilds, members)
-            except aiohttp.ClientConnectorError:
-                pass
+    while True:
+        guilds, members = await get_guild_member_count(redis)
+        counts = [f"{guilds} servers", f"{members} members"]
+        random.shuffle(counts)
+        message = f"{counts[0]} and {counts[1]}"
+        log.debug(f"Sending {message!r}")
+        try:
+            await rabbit.send_status(message)
+            await post_bot_sites(guilds, members)
+        except aiohttp.ClientConnectorError:
+            pass
 
-            await asyncio.sleep(60)
+        await asyncio.sleep(60)
 
 
 if __name__ == "__main__":
