@@ -1,5 +1,5 @@
 PyYAML
 aiohttp
-aiopg
+aioredis
 sentry-sdk==0.15.1
 git+git://github.com/NQN-Discord/rabbit_helper.git
