@@ -2,13 +2,10 @@ import yaml
 from typing import Tuple
 import asyncio
 import aiohttp
-import random
 import aioredis
 from sys import stderr
 from logging import basicConfig, INFO, getLogger
 import sentry_sdk
-
-from rabbit_sender import StatusUpdateRabbit
 
 
 basicConfig(stream=stderr, level=INFO, format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -107,18 +104,11 @@ async def main(config):
         sentry_sdk.init(config["sentry"])
     log.info("Starting up")
 
-    rabbit = StatusUpdateRabbit(config["rabbit_uri"])
-    await rabbit.connect()
     redis = await aioredis.create_redis_pool(config["nonpersistent_redis_uri"], encoding="utf-8")
 
     while True:
         guilds, members = await get_guild_member_count(redis)
-        counts = [f"{guilds} servers", f"{members} members"]
-        random.shuffle(counts)
-        message = f"{counts[0]} and {counts[1]}"
-        log.debug(f"Sending {message!r}")
         try:
-            await rabbit.send_status(message)
             await post_bot_sites(guilds, members)
         except aiohttp.ClientConnectorError:
             pass
