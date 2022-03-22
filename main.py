@@ -6,6 +6,7 @@ import aioredis
 from sys import stderr
 from logging import basicConfig, INFO, getLogger
 import sentry_sdk
+import statcord
 
 
 basicConfig(stream=stderr, level=INFO, format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
@@ -24,6 +25,7 @@ async def post_bot_sites(guild_count: int, user_count: int):
     bot_id = 559426966151757824  # bot.user.id
 
     async with aiohttp.ClientSession(headers={"User-Agent": "NQN Not Quite Nitro Discord Bot"}) as client:
+        await statcord.post(bot_id, guild_count, user_count, client, config["prometheus"], config["sites"].get("statcord"))
         dbl = config["sites"].get("dbl")
         if dbl:
             await client.post(
