@@ -2,5 +2,5 @@ PyYAML
 aiohttp
 aioredis==1.3.1
 sentry-sdk==0.15.1
-git+git://github.com/NQN-Discord/rabbit_helper.git
+git+https://github.com/NQN-Discord/rabbit_helper.git
 psutil
