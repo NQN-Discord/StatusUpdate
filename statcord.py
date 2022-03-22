@@ -14,7 +14,7 @@ async def post(bot_id: int, guild_count: int, user_count: int, client, prom_url:
             "time": str(time.time())
         })
     prom_data = await resp.json()
-    commands = Counter({cmd["metric"]["command"]: int(float(cmd["value"][1])) for cmd in prom_data["data"]["result"]})
+    commands = Counter({cmd["metric"]["command"]: int(float(cmd["value"][1])) for cmd in prom_data["data"]["result"] if len(cmd["metric"]["command"]) > 2})
 
     await client.post(
         url=f"https://api.statcord.com/v3/stats",
